@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subway SG Builder — matches in-store steps</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f4f0;color:#1a1a18;padding:1rem;padding-bottom:130px}
+.wrap{max-width:680px;margin:0 auto}
+h1{font-size:18px;font-weight:600;margin-bottom:0.25rem}
+.subtitle{font-size:12px;color:#666;margin-bottom:1.25rem;line-height:1.5}
+.sec{margin-bottom:1.6rem}
+.step-bar{display:flex;align-items:center;gap:10px;padding-bottom:0.55rem;border-bottom:1px solid #e2e0da;margin-bottom:0.75rem}
+.step-num{width:24px;height:24px;border-radius:50%;background:#0a7a43;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.step-title{font-size:15px;font-weight:600}
+.step-sub{font-size:11.5px;color:#888;font-weight:400;margin-left:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:7px}
+.opt{background:#fff;border:1.5px solid #e0ded8;border-radius:10px;padding:9px 11px;cursor:pointer;transition:all 0.12s;display:flex;flex-direction:column;gap:3px;user-select:none}
+.opt:hover{border-color:#aaa}
+.opt.sel{border-color:#0a7a43;background:#f0f9f4}
+.opt .nm{font-size:12.5px;font-weight:500;line-height:1.3}
+.opt .kc{font-size:11.5px;color:#555}
+.opt .kc b{color:#1a1a18}
+.opt .est{font-size:9px;color:#a05a00;background:#faeeda;border-radius:8px;padding:1px 6px;width:fit-content;margin-top:1px}
+.opt .badge{font-size:9px;color:#185FA5;background:#E6F1FB;border-radius:8px;padding:1px 6px;width:fit-content;margin-top:1px}
+.opt .price{font-size:10px;color:#0a7a43;font-weight:600}
+.subhead{font-size:11px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:0.05em;margin:0.7rem 0 0.45rem}
+.totalbar{position:fixed;bottom:0;left:0;right:0;background:#1a1a18;color:#fff;padding:13px 1rem;box-shadow:0 -4px 16px rgba(0,0,0,0.2)}
+.totalbar .inner{max-width:680px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.totalbar .lbl{font-size:11px;color:#bbb}
+.totalbar .num{font-size:25px;font-weight:700;white-space:nowrap}
+.totalbar .num span{font-size:12px;font-weight:400;color:#bbb}
+.totalbar .breakdown{font-size:10.5px;color:#999;margin-top:1px;line-height:1.4}
+.reset{background:transparent;border:1px solid #555;color:#ccc;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;flex-shrink:0}
+.est-flag{color:#f5b860;font-size:10.5px;margin-top:2px;display:none}
+.dbl{margin-top:0.6rem;display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #e0ded8;border-radius:10px;padding:9px 12px;cursor:pointer;user-select:none;width:fit-content}
+.dbl.sel{border-color:#0a7a43;background:#f0f9f4}
+.dbl .nm{font-size:12.5px;font-weight:500}
+.dbl .kc{font-size:11px;color:#555}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🥪 Subway SG Builder</h1>
+<p class="subtitle">Matches the in-store counter steps exactly. Tap your picks — live total below. <b>Official</b> = Subway SG nutrition document. <b>Estimate</b> = newer item, no official SG figure published yet (±30–50 kcal).</p>
+
+<div class="sec">
+  <div class="step-bar"><div class="step-num">1</div><span class="step-title">Choose your carrier</span><span class="step-sub">6-inch</span></div>
+  <div class="grid" id="g-carrier"></div>
+</div>
+
+<div class="sec">
+  <div class="step-bar"><div class="step-num">2</div><span class="step-title">Choose your classic flavour</span><span class="step-sub">filling only — veggies counted in step 5</span></div>
+  <div class="grid" id="g-fill"></div>
+  <div class="dbl" id="dblmeat" onclick="toggleDouble()">
+    <div><div class="nm">➕ Double Meat (+$3.20)</div><div class="kc">doubles your filling calories</div></div>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="step-bar"><div class="step-num">3</div><span class="step-title">Add-ons</span><span class="step-sub">tap any — all optional paid extras</span></div>
+  <div class="grid" id="g-addon"></div>
+</div>
+
+<div class="sec">
+  <div class="step-bar"><div class="step-num">4</div><span class="step-title">Cheese</span><span class="step-sub">pick one or skip</span></div>
+  <div class="grid" id="g-cheese"></div>
+</div>
+
+<div class="sec">
+  <div class="step-bar"><div class="step-num">5</div><span class="step-title">Choose your veggies</span><span class="step-sub">tap any — basically free</span></div>
+  <div class="subhead">Signature Fresh Cuts</div>
+  <div class="grid" id="g-veg1"></div>
+  <div class="subhead">Other Toppings</div>
+  <div class="grid" id="g-veg2"></div>
+</div>
+
+<div class="sec">
+  <div class="step-bar"><div class="step-num">6</div><span class="step-title">Choose your sauce</span><span class="step-sub">pick one — per standard serving</span></div>
+  <div class="subhead">Tangy (low cal)</div>
+  <div class="grid" id="g-sauce1"></div>
+  <div class="subhead">Savoury & Spicy (higher cal)</div>
+  <div class="grid" id="g-sauce2"></div>
+</div>
+</div>
+
+<div class="totalbar">
+  <div class="inner">
+    <div>
+      <div class="lbl">Your 6-inch total</div>
+      <div class="num" id="total">0 <span>kcal</span></div>
+      <div class="breakdown" id="breakdown">Pick a carrier and flavour to start</div>
+      <div class="est-flag" id="estflag">⚠ includes estimated item(s)</div>
+    </div>
+    <button class="reset" onclick="resetAll()">Reset</button>
+  </div>
+</div>
+
+<script>
+// Official values from Subway SG Nutrition Guide. Fillings derived as (official sub total − 197 multigrain − ~10 standard veg).
+// Items not in any official SG document are estimates and flagged.
+
+const carriers = [
+  {n:"Wheat", kcal:197, badge:"official · best fibre"},
+  {n:"White", kcal:194, badge:"official"},
+  {n:"Parmesan Oregano", kcal:206, badge:"official"},
+  {n:"Shallot", kcal:210, est:true},
+  {n:"Honey Oat", kcal:237, badge:"official"},
+  {n:"Flatbread (+$0.60)", kcal:226, badge:"official"},
+  {n:"Wrap (+$0.60)", kcal:309, badge:"official · highest"},
+  {n:"Salad (+$2.20)", kcal:15, badge:"no bread · greens base"},
+];
+
+const fills = [
+  {n:"Roasted Chicken Breast", kcal:95, badge:"official · leanest"},
+  {n:"Roasted Chicken Thigh", kcal:125, est:true},
+  {n:"Chicken Teriyaki", kcal:112, badge:"official · top pick"},
+  {n:"Chicken Ham", kcal:65, badge:"official"},
+  {n:"Rotisserie Chicken", kcal:110, est:true},
+  {n:"Chicken Chorizo", kcal:180, est:true},
+  {n:"Chicken Bacon Ranch", kcal:216, badge:"official · cheese+ranch incl"},
+  {n:"Cold Cut Trio", kcal:133, badge:"official"},
+  {n:"Subway Melt", kcal:149, badge:"official · cheese incl"},
+  {n:"Italian B.M.T.", kcal:185, badge:"official"},
+  {n:"Beef Brisket", kcal:180, est:true},
+  {n:"Tuna Mayo", kcal:255, badge:"official · highest"},
+  {n:"Egg Mayo", kcal:232, badge:"official"},
+  {n:"Falafel", kcal:165, est:true},
+  {n:"Mushroom Delite", kcal:40, est:true},
+  {n:"Veggie Delite", kcal:5, badge:"official · veg only"},
+];
+
+const addons = [
+  {n:"Egg Mayo scoop (+$1.50)", kcal:120, est:true},
+  {n:"Tuna Mayo scoop (+$1.50)", kcal:130, est:true},
+  {n:"Sliced Mushrooms (+$1.50)", kcal:10, est:true},
+  {n:"Avocado (+$1.50)", kcal:59, badge:"official"},
+  {n:"Chicken Bacon (+$1.50)", kcal:37, badge:"official (2 strips)"},
+  {n:"Cauliflower Rice (+$1.50)", kcal:20, est:true},
+  {n:"Hard-boiled Egg (+$1.50)", kcal:70, est:true},
+  {n:"Egg Patty (+$1.50)", kcal:90, est:true},
+  {n:"Caramelised Onions (+$0.80)", kcal:20, est:true},
+  {n:"Falafel patty (+$0.80)", kcal:90, est:true},
+];
+
+const cheeses = [
+  {n:"No cheese", kcal:0, badge:"fat-loss pick"},
+  {n:"American", kcal:40, badge:"official"},
+  {n:"Monterey Cheddar", kcal:54, badge:"official"},
+  {n:"Mozzarella (+$0.80)", kcal:50, est:true},
+  {n:"Old English (+$0.80)", kcal:52, est:true},
+];
+
+const veg1 = [
+  {n:"Lettuce", kcal:0},{n:"Tomatoes", kcal:0},{n:"Cucumbers", kcal:0},
+  {n:"Red Onions", kcal:0},{n:"Green Peppers", kcal:0},
+];
+const veg2 = [
+  {n:"Mixed Greens", kcal:0},{n:"Corn", kcal:10},{n:"Pickles", kcal:0},
+  {n:"Jalapeños", kcal:0},{n:"Olives", kcal:5},
+];
+
+const sauce1 = [
+  {n:"No sauce", kcal:0},
+  {n:"Mustard", kcal:5, badge:"official"},
+  {n:"Honey Mustard", kcal:34, badge:"official"},
+  {n:"Sweet Onion", kcal:39, badge:"official · best taste/kcal"},
+  {n:"Ketchup", kcal:20, est:true},
+  {n:"BBQ", kcal:45, est:true},
+  {n:"Chilli", kcal:15, est:true},
+];
+const sauce2 = [
+  {n:"Ranch", kcal:97, badge:"official"},
+  {n:"Chipotle Southwest", kcal:97, badge:"official"},
+  {n:"Mayo", kcal:107, badge:"official · highest"},
+  {n:"Caesar", kcal:100, est:true},
+  {n:"Spicy Mayo", kcal:100, est:true},
+  {n:"Jalapeño Cheese", kcal:80, est:true},
+];
+
+const state = {carrier:null, fill:null, cheese:0, addons:new Set(), veg:new Set(), sauce:null, dbl:false};
+
+function mk(list, gridId, group, multi){
+  document.getElementById(gridId).innerHTML = list.map((o,i)=>`
+    <div class="opt" id="${group}-${i}" onclick="pick('${group}',${i},${!!multi})">
+      <div class="nm">${o.n}</div>
+      <div class="kc">${o.kcal===0?'0 kcal':'<b>+'+o.kcal+'</b> kcal'}</div>
+      ${o.est?'<div class="est">estimate</div>':''}
+      ${o.badge?'<div class="badge">'+o.badge+'</div>':''}
+    </div>`).join("");
+}
+
+const groups = {carrier:{list:carriers,single:true},fill:{list:fills,single:true},cheese:{list:cheeses,single:true},
+addon:{list:addons,single:false},veg1:{list:veg1,single:false},veg2:{list:veg2,single:false},
+sauce1:{list:sauce1,single:true,pair:'sauce2'},sauce2:{list:sauce2,single:true,pair:'sauce1'}};
+
+window.pick = function(group,i,multi){
+  if(group==='addon'){
+    const key='a'+i;
+    if(state.addons.has(key)){state.addons.delete(key);document.getElementById('addon-'+i).classList.remove('sel');}
+    else{state.addons.add(key);document.getElementById('addon-'+i).classList.add('sel');}
+  } else if(group==='veg1'||group==='veg2'){
+    const key=group+'-'+i;
+    if(state.veg.has(key)){state.veg.delete(key);document.getElementById(key).classList.remove('sel');}
+    else{state.veg.add(key);document.getElementById(key).classList.add('sel');}
+  } else if(group==='sauce1'||group==='sauce2'){
+    ['sauce1','sauce2'].forEach(g=>{
+      const n=groups[g].list.length;
+      for(let k=0;k<n;k++) document.getElementById(g+'-'+k).classList.remove('sel');
+    });
+    document.getElementById(group+'-'+i).classList.add('sel');
+    state.sauce={group,i};
+  } else {
+    const n=groups[group].list.length;
+    for(let k=0;k<n;k++) document.getElementById(group+'-'+k).classList.remove('sel');
+    document.getElementById(group+'-'+i).classList.add('sel');
+    state[group]=i;
+  }
+  update();
+};
+
+window.toggleDouble = function(){
+  state.dbl=!state.dbl;
+  document.getElementById('dblmeat').classList.toggle('sel');
+  update();
+};
+
+function update(){
+  let total=0, parts=[], hasEst=false;
+  if(state.carrier!==null){const c=carriers[state.carrier];total+=c.kcal;parts.push('carrier '+c.kcal);if(c.est)hasEst=true;}
+  if(state.fill!==null){
+    const f=fills[state.fill];
+    let fk=f.kcal*(state.dbl?2:1);
+    total+=fk;parts.push('filling '+fk+(state.dbl?' (×2)':''));
+    if(f.est)hasEst=true;
+  }
+  if(state.cheese!==null&&cheeses[state.cheese].kcal>0){
+    total+=cheeses[state.cheese].kcal;parts.push('cheese '+cheeses[state.cheese].kcal);
+    if(cheeses[state.cheese].est)hasEst=true;
+  }
+  let ak=0;state.addons.forEach(key=>{const o=addons[+key.slice(1)];ak+=o.kcal;if(o.est)hasEst=true;});
+  if(ak>0){total+=ak;parts.push('add-ons '+ak);}
+  let vk=0;state.veg.forEach(key=>{const[g,i]=key.split('-');vk+=groups[g].list[+i].kcal;});
+  if(vk>0){total+=vk;parts.push('veg '+vk);}
+  if(state.sauce){const s=groups[state.sauce.group].list[state.sauce.i];
+    if(s.kcal>0){total+=s.kcal;parts.push('sauce '+s.kcal);}
+    if(s.est)hasEst=true;}
+  document.getElementById('total').innerHTML=total+' <span>kcal</span>';
+  document.getElementById('breakdown').textContent=parts.length?parts.join(' + '):'Pick a carrier and flavour to start';
+  document.getElementById('estflag').style.display=hasEst?'block':'none';
+}
+
+window.resetAll=function(){
+  state.carrier=null;state.fill=null;state.cheese=0;state.sauce=null;state.dbl=false;
+  state.addons.clear();state.veg.clear();
+  document.querySelectorAll('.opt,.dbl').forEach(o=>o.classList.remove('sel'));
+  document.getElementById('cheese-0').classList.add('sel');
+  document.getElementById('sauce1-0').classList.add('sel');
+  state.sauce={group:'sauce1',i:0};
+  update();
+};
+
+mk(carriers,'g-carrier','carrier');
+mk(fills,'g-fill','fill');
+mk(addons,'g-addon','addon',true);
+mk(cheeses,'g-cheese','cheese');
+mk(veg1,'g-veg1','veg1',true);
+mk(veg2,'g-veg2','veg2',true);
+mk(sauce1,'g-sauce1','sauce1');
+mk(sauce2,'g-sauce2','sauce2');
+document.getElementById('cheese-0').classList.add('sel');
+document.getElementById('sauce1-0').classList.add('sel');
+state.sauce={group:'sauce1',i:0};
+update();
+</script>
+</body>
+</html>
